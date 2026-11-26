@@ -912,7 +912,12 @@ function renderStudents() {
       const balColor = fin.balanceMoney >= 0 ? '#16a34a' : '#dc2626';
       const btn = document.createElement('button');
       btn.className = 'student-btn' + (s.id === currentStudentId ? ' active' : '');
-      btn.innerHTML = `${s.name} <span style="font-size:11px; opacity:0.7">${s.className ? s.className + ' кл.' : ''}</span><span class="balance" style="color: ${balColor}">${balText}</span><span class="price-tag">${s.pricePerLesson} ₽/зан</span>`;
+      const year = currentDate.getFullYear(), month = currentDate.getMonth();
+const monthEarned = data.payments
+  .filter(p => p.studentId === s.id)
+  .filter(p => { const d = new Date(p.date); return d.getFullYear() === year && d.getMonth() === month; })
+  .reduce((sum, p) => sum + (p.sum !== undefined ? p.sum : (p.amount * (p.pricePerLesson || s.pricePerLesson))), 0);
+btn.innerHTML = `${s.name} <span style="font-size:11px; opacity:0.7">${s.className ? s.className + ' кл.' : ''}</span><span class="balance" style="color: ${balColor}">${balText}</span><span class="price-tag">${s.pricePerLesson} ₽/зан · за мес. ${monthEarned} ₽</span>`;
       btn.onclick = () => { currentStudentId = s.id; render(); };
       const editBtn = document.createElement('button');
       editBtn.className = 'edit-student'; editBtn.textContent = '✎';
@@ -1235,29 +1240,82 @@ function render() {
   rebuildPaidCache();
   renderStudents();
   const statsContainer = document.getElementById('statsContainer');
+  const year = currentDate.getFullYear(), month = currentDate.getMonth();
+
+  // Общий подсчёт платежей за текущий отображаемый месяц (для обоих режимов)
+  const monthNames = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+  const monthName = monthNames[month];
+
   if (currentStudentId === 'all') {
     document.getElementById('currentLabel').textContent = 'Режим просмотра';
     document.getElementById('currentStudentName').textContent = 'Все ученики';
-    const year = currentDate.getFullYear(), month = currentDate.getMonth();
+
     const monthLessons = data.lessons.filter(l => { const d = new Date(l.date); return d.getFullYear() === year && d.getMonth() === month; });
     const planned = monthLessons.filter(l => l.status === 'planned').length;
     const done = monthLessons.filter(l => l.status === 'done').length;
     const canceled = monthLessons.filter(l => l.status === 'canceled').length;
     const paid = monthLessons.filter(l => (l.status === 'done' || l.status === 'planned' || (l.status === 'canceled' && l.chargeForCancel)) && isLessonPaid(l)).length;
+
     let monthEarned = 0;
-    data.payments.forEach(p => { const d = new Date(p.date); if (d.getFullYear() === year && d.getMonth() === month) monthEarned += (p.sum !== undefined ? p.sum : (p.amount * (p.pricePerLesson || DEFAULT_PRICE))); });
-    statsContainer.innerHTML = `<div class="stats-row"><div class="stat-item planned"><div class="label">Запланировано</div><div class="value">${planned}</div></div><div class="stat-item paid"><div class="label">Оплачено</div><div class="value">${paid}</div></div><div class="stat-item unpaid"><div class="label">Не оплачено</div><div class="value">${done - paid}</div></div><div class="stat-item"><div class="label">Отменено</div><div class="value">${canceled}</div></div><div class="stat-item money"><div class="label">Получено</div><div class="value">${monthEarned} ₽</div></div></div>`;
+    data.payments.forEach(p => {
+      const d = new Date(p.date);
+      if (d.getFullYear() === year && d.getMonth() === month) {
+        monthEarned += (p.sum !== undefined ? p.sum : (p.amount * (p.pricePerLesson || DEFAULT_PRICE)));
+      }
+    });
+
+    statsContainer.innerHTML = `
+      <div class="stats-row">
+        <div class="stat-item planned"><div class="label">Запланировано</div><div class="value">${planned}</div></div>
+        <div class="stat-item paid"><div class="label">Оплачено</div><div class="value">${paid}</div></div>
+        <div class="stat-item unpaid"><div class="label">Не оплачено</div><div class="value">${done - paid}</div></div>
+        <div class="stat-item"><div class="label">Отменено</div><div class="value">${canceled}</div></div>
+        <div class="stat-item money"><div class="label">Получено за ${monthName}</div><div class="value">${monthEarned} ₽</div></div>
+      </div>`;
   } else {
     document.getElementById('currentLabel').textContent = 'Текущий ученик';
     const s = data.students.find(x => x.id === currentStudentId);
     document.getElementById('currentStudentName').textContent = s ? s.name : '—';
-    const fin = s ? getFinancials(s.id) : { balanceMoney: 0 };
+
+    const fin = s ? getFinancials(s.id) : { balanceMoney: 0, totalPaid: 0 };
     const bal = fin.balanceMoney;
-    statsContainer.innerHTML = `<div style="text-align:right;"><div style="color:#666; font-size:13px;">Финансовый баланс</div><div class="balance-big ${bal > 0 ? 'positive' : bal < 0 ? 'negative' : 'zero'}">${(bal >= 0 ? '+' : '') + bal} ₽</div><div style="font-size:12px; color:#888; margin-top:2px;">${bal >= 0 ? 'Депозит / Предоплата' : 'Задолженность'}</div></div>`;
+
+    // Платежи конкретного ученика за отображаемый месяц
+    let studentMonthEarned = 0;
+    let studentMonthPaymentsCount = 0;
+    data.payments.forEach(p => {
+      if (p.studentId !== currentStudentId) return;
+      const d = new Date(p.date);
+      if (d.getFullYear() === year && d.getMonth() === month) {
+        studentMonthEarned += (p.sum !== undefined ? p.sum : (p.amount * (p.pricePerLesson || DEFAULT_PRICE)));
+        studentMonthPaymentsCount++;
+      }
+    });
+
+    // Занятия ученика за отображаемый месяц
+    const studentMonthLessons = data.lessons.filter(l => {
+      if (l.studentId !== currentStudentId) return false;
+      const d = new Date(l.date);
+      return d.getFullYear() === year && d.getMonth() === month;
+    });
+    const studentMonthDone = studentMonthLessons.filter(l => l.status === 'done').length;
+    const studentMonthPlanned = studentMonthLessons.filter(l => l.status === 'planned').length;
+
+    statsContainer.innerHTML = `
+      <div style="text-align:right;">
+        <div style="color:#666; font-size:13px;">Финансовый баланс</div>
+        <div class="balance-big ${bal > 0 ? 'positive' : bal < 0 ? 'negative' : 'zero'}">${(bal >= 0 ? '+' : '') + bal} ₽</div>
+        <div style="font-size:12px; color:#888; margin-top:2px;">${bal >= 0 ? 'Депозит / Предоплата' : 'Задолженность'}</div>
+      </div>
+      <div class="stats-row" style="margin-top:10px; width:100%;">
+        <div class="stat-item money"><div class="label">Внесено за ${monthName}</div><div class="value">${studentMonthEarned} ₽</div></div>
+        <div class="stat-item"><div class="label">Платежей за ${monthName}</div><div class="value">${studentMonthPaymentsCount}</div></div>
+        <div class="stat-item paid"><div class="label">Проведено за ${monthName}</div><div class="value">${studentMonthDone}</div></div>
+        <div class="stat-item planned"><div class="label">Запланировано за ${monthName}</div><div class="value">${studentMonthPlanned}</div></div>
+      </div>`;
   }
   renderCalendar();
 }
-
 function populateStudentSelect() {
   const select = document.getElementById('newStudentSelect');
   select.innerHTML = '';
