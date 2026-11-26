@@ -428,6 +428,93 @@
     .add-student { color: var(--muted); border-color: #475569; }
     .add-student:hover { color: var(--primary); border-color: var(--primary); }
   }
+    /* ============================================================
+     ТЁМНАЯ ТЕМА — ИСПРАВЛЕНИЯ КОНТРАСТА
+     Переопределяем inline-стили и проблемные места.
+     ============================================================ */
+  @media (prefers-color-scheme: dark) {
+    /* Заголовки и подписи */
+    #currentLabel { color: var(--muted) !important; }
+    #currentStudentName { color: var(--text) !important; }
+    #lessonInfo { color: var(--muted) !important; }
+
+    /* Модалки: подписи полей */
+    .modal label { color: #cbd5e1 !important; }
+    .modal h3 { color: var(--text); }
+    .modal input::placeholder,
+    .modal textarea::placeholder { color: #64748b; }
+
+    /* Select: выпадающий список и option */
+    .student-dropdown,
+    .modal select {
+      background: #0f172a !important;
+      color: var(--text) !important;
+      border-color: var(--border) !important;
+    }
+    .modal select option { background: #0f172a; color: var(--text); }
+
+    /* Поля ввода */
+    .modal input,
+    .modal textarea {
+      background: #0f172a !important;
+      color: var(--text) !important;
+      border-color: var(--border) !important;
+    }
+
+    /* Блок отмены занятия (жёлтый) — делаем тёмно-янтарным */
+    #cancelBlock label[style*="fef3c7"] {
+      background: #3b2f14 !important;
+      border-color: #78550f !important;
+    }
+    #cancelBlock label[style*="fef3c7"] span {
+      color: #fbbf24 !important;
+    }
+
+    /* Динамический блок расчёта оплаты */
+    #paymentBreakdown > div {
+      background: #16233a !important;
+      border-color: var(--border) !important;
+      color: var(--text) !important;
+    }
+    #paymentBreakdown div[style*="color:#64748b"],
+    #paymentBreakdown span[style*="color:#64748b"] { color: #94a3b8 !important; }
+    #paymentBreakdown div[style*="color:#0f172a"],
+    #paymentBreakdown span[style*="color:#0f172a"] { color: var(--text) !important; }
+    #paymentBreakdown div[style*="color:#94a3b8"],
+    #paymentBreakdown span[style*="color:#94a3b8"] { color: #94a3b8 !important; }
+    #paymentBreakdown div[style*="color:#16a34a"],
+    #paymentBreakdown span[style*="color:#16a34a"] { color: #4ade80 !important; }
+    #paymentBreakdown div[style*="color:#dc2626"],
+    #paymentBreakdown span[style*="color:#dc2626"] { color: #f87171 !important; }
+    #paymentBreakdown div[style*="color:#3b82f6"],
+    #paymentBreakdown span[style*="color:#3b82f6"] { color: #60a5fa !important; }
+    #paymentBreakdown div[style*="border-top"],
+    #paymentBreakdown div[style*="border-bottom"] { border-color: var(--border) !important; }
+
+    /* Итоговая плашка «Будет зачислено занятий» */
+    .total-display { background: #3b2f14 !important; }
+    .total-display .label { color: #fcd34d !important; }
+    .total-display .value { color: #fbbf24 !important; }
+
+    /* Список оплат за день */
+    .payment-item { background: #3b2f14 !important; }
+    .payment-item .amount { color: #fcd34d !important; }
+    .payment-item .sum { color: #fbbf24 !important; }
+
+    /* Легенда */
+    .legend { color: var(--text); }
+
+    /* Инфо-бар: подпись «Финансовый баланс» */
+    #statsContainer div[style*="color:#666"] { color: var(--muted) !important; }
+    #statsContainer div[style*="color:#888"] { color: var(--muted) !important; }
+
+    /* Кнопка «Редактировать» в режиме списка */
+    .btn-ghost { background: #334155; color: var(--text); }
+
+    /* Скроллбар (по желанию) */
+    .modal::-webkit-scrollbar { width: 8px; }
+    .modal::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+  }
 </style>
 </head>
 <body>
