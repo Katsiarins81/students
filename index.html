@@ -835,12 +835,34 @@ function getFinancials(studentId) {
 
 function getPaidLessonIds(studentId) {
   const lessons = data.lessons.filter(l => l.studentId === studentId && (l.status === 'done' || l.status === 'planned' || (l.status === 'canceled' && l.chargeForCancel)))
+    function getPaidLessonIds(studentId) {
+  const lessons = data.lessons
+    .filter(l => l.studentId === studentId && (l.status === 'done' || l.status === 'planned' || (l.status === 'canceled' && l.chargeForCancel)))
     .sort((a, b) => {
-      const da = new Date(a.date + 'T00:00:00').getTime();
-      const db = new Date(b.date + 'T00:00:00').getTime();
+      // Сортируем по реальной дате+времени, а не по порядку добавления
+      const da = new Date(a.date).getTime();
+      const db = new Date(b.date).getTime();
       if (da !== db) return da - db;
-      return a.time.localeCompare(b.time);
+      // Если даты совпадают — по времени начала занятия
+      return (a.time || '').localeCompare(b.time || '');
     });
+
+  const currentPrice = (data.students.find(s => s.id === studentId)?.pricePerLesson) || DEFAULT_PRICE;
+
+  const totalFullyPaidLessons = data.payments
+    .filter(p => p.studentId === studentId)
+    .reduce((count, p) => {
+      const pPrice = p.pricePerLesson || currentPrice;
+      const pSum = p.sum !== undefined ? p.sum : (p.amount * pPrice);
+      return count + Math.floor(pSum / pPrice);
+    }, 0);
+
+  const paid = new Set();
+  for (let i = 0; i < Math.min(lessons.length, totalFullyPaidLessons); i++) {
+    paid.add(lessons[i].id);
+  }
+  return paid;
+}
   const currentPrice = (data.students.find(s => s.id === studentId)?.pricePerLesson) || DEFAULT_PRICE;
   const totalFullyPaidLessons = data.payments.filter(p => p.studentId === studentId).reduce((count, p) => {
     const pPrice = p.pricePerLesson || currentPrice;
