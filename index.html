@@ -515,6 +515,42 @@
     .modal::-webkit-scrollbar { width: 8px; }
     .modal::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
   }
+    @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #334155;
+    }
+    body { background: var(--bg); color: var(--text); }
+    .calendar, .info-bar { background: var(--card); }
+    .cal-day { background: #1a2537; border-color: #2b3a52; }
+    .cal-day:hover { background: #223049; }
+    .cal-day.today { background: #1e2b45; }
+    .view-toggle button { background: var(--card); color: var(--text); border-color: var(--border); }
+    .student-btn { background: var(--card); color: var(--text); border-color: var(--border); }
+    .student-btn.active { background: var(--primary); color: #fff; }
+    .modal { background: var(--card); color: var(--text); }
+    .modal input, .modal select, .modal textarea { background: #0f172a; color: var(--text); border-color: var(--border); }
+    .btn-ghost { background: #334155; color: var(--text); }
+    .legend, .stat-item { background: #16233a; }
+    .payment-item { background: #3b2f14; }
+    .total-display { background: #3b2f14; }
+    .add-student { color: var(--muted); border-color: #475569; }
+    .add-student:hover { color: var(--primary); border-color: var(--primary); }
+
+    /* === ИСПРАВЛЕНИЕ: кнопки навигации по месяцам === */
+    .cal-header button {
+      background: #1e293b !important;
+      color: var(--text) !important;
+      -webkit-text-fill-color: var(--text) !important;
+      border-color: var(--border) !important;
+    }
+    .cal-header button:hover {
+      background: #334155 !important;
+    }
+  }
 </style>
 </head>
 <body>
